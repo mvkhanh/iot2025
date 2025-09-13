@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--den", type=int, default=3, help="detect_every_n")
     parser.add_argument("--use-cam", dest='use_picam', action="store_false", help="Dùng cam laptop trong trường hợp không có pi", default=True)
     parser.add_argument("--fps", type=int, default=15, help="FPS khi dùng cam laptop")
-    parser.add_argument('--led-pins', type=lambda s: list(map(lambda x: int(x.strip()), s.split(','))), help='Ví dụ: 1,2,3')
+    parser.add_argument('--led-pins', type=lambda s: list(map(lambda x: int(x.strip()), s.split(','))), help='Ví dụ: 1,2,3', default=[21, 20, 16])
     
     sub = parser.add_subparsers(dest="mode", required=True)
     
