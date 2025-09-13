@@ -12,10 +12,12 @@ class RecogWorker(DetectWorker):
     Keeps only the most recent frame to avoid backlog.
     """
     def __init__(self, detector: HaarFaceDetector, recognizer: LBPFaceRecognizer, db: FaceDB, use_picam: bool, led_pins: list[int], thresh: float, margin: float, detect_every_n: int, quality: int=80):
-        super().__init__(detector=detector, use_picam=use_picam, led_pins=led_pins, thresh=thresh, margin=margin, detect_every_n=detect_every_n
+        super().__init__(detector=detector, use_picam=use_picam, led_pins=led_pins, detect_every_n=detect_every_n
                          , quality=quality)
         self.recognizer = recognizer
         self.db = db
+        self.thresh = thresh
+        self.margin = margin
 
     def annotate_and_encode(self, frame_bgr: np.ndarray, frame_idx=0):
         static = getattr(self.__class__.annotate_and_encode, "_static",  None)

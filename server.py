@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     elif args.mode == 'detection':
         detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
-                               thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
+                                detect_every_n=args.den, quality=args.quality)
         main(args, detect_worker)
 
     if args.use_picam:

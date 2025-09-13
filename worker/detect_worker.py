@@ -11,10 +11,9 @@ class DetectWorker(threading.Thread):
     Single worker thread to run annotate_and_encode() asynchronously.
     Keeps only the most recent frame to avoid backlog.
     """
-    def __init__(self, detector: HaarFaceDetector, use_picam: bool, led_pins: list[int], thresh: float, margin: float, detect_every_n: int, quality: int=80):
+    def __init__(self, detector: HaarFaceDetector, use_picam: bool, led_pins: list[int], detect_every_n: int, quality: int=80):
         super().__init__(daemon=True)
-        self.thresh = thresh
-        self.margin = margin
+        
         self.detect_every_n = detect_every_n
         self.use_picam = use_picam
         self.led_pins = led_pins
