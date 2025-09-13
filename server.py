@@ -11,6 +11,7 @@ from worker.recognize_worker import RecogWorker
 
 def main(args, worker: DetectWorker, cam:VideoSource):
     worker.start()
+    cv2.namedWindow(args.mode, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(args.mode, width=640, height=480)
     try:
         while True:
