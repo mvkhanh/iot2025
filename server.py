@@ -2,6 +2,7 @@
 import argparse
 import time
 import cv2
+import threading
 from db.face_db import FaceDB
 from model.face_detector import HaarFaceDetector
 from model.face_recognizer import LBPFaceRecognizer
@@ -9,18 +10,35 @@ from utils import enroll_from_camera, VideoSource
 from worker.detect_worker import DetectWorker
 from worker.recognize_worker import RecogWorker
 
-def main(args, worker: DetectWorker, cam:VideoSource):
-    worker.start()
+class CaptureWorker(threading.Thread):
+    def __init__(self, cam: VideoSource, detect_worker: DetectWorker = None):
+        super().__init__(daemon=True)
+        self._stop = False
+        self.detect_worker = detect_worker
+        self.cam = cam
+        
+    def run(self):
+        try:
+            while not self._stop:
+                ok, frame_bgr = cam.read()
+                if not ok:
+                    time.sleep(0.02); continue
+                self.detect_worker.submit(frame_bgr)
+        finally:
+            cam.release()
+            
+    def stop(self):
+        self._stop = True
+
+def main(args, detect_worker: DetectWorker, capture_worker: CaptureWorker):
+    capture_worker.start()
+    detect_worker.start()
+
     cv2.namedWindow(args.mode, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(args.mode, width=640, height=480)
     try:
         while True:
-            ok, frame_bgr = cam.read()
-            if not ok:
-                time.sleep(0.02); continue
-            worker.submit(frame_bgr)
-
-            jpg = worker.last_jpg
+            jpg = detect_worker.last_jpg
             if jpg is not None:
                 cv2.imshow(args.mode, jpg)
 
@@ -30,7 +48,6 @@ def main(args, worker: DetectWorker, cam:VideoSource):
     except KeyboardInterrupt:
         pass
     finally:
-        cam.release()
         cv2.destroyAllWindows()
         
 if __name__ == "__main__":
@@ -56,6 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     detector = HaarFaceDetector()
     cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
+    capture_worker = CaptureWorker(cam)
     if args.use_picam:
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)
@@ -72,9 +90,11 @@ if __name__ == "__main__":
         else:
             recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
                                thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
+            capture_worker.detect_worker = recog_worker
             main(args, recog_worker, cam)
 
     elif args.mode == 'detection':
         detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
                                 detect_every_n=args.den, quality=args.quality)
+        capture_worker.detect_worker = detect_worker
         main(args, detect_worker, cam)
