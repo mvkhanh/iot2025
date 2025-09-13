@@ -93,6 +93,5 @@ class RecogWorker(DetectWorker):
             cv2.rectangle(frame_bgr, (x,y), (x+w, y+h), color, 2)
             txt = f"{name} ({dist:.2f})" if name != "unknown" else "unknown"
             cv2.putText(frame_bgr, txt, (x, max(0, y-8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
-
         ret, jpg = cv2.imencode(".jpg", frame_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), self.quality])
         return jpg.tobytes() if ret else None

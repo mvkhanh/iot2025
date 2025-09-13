@@ -44,7 +44,8 @@ class VideoSource:
 
     def read(self) -> Optional[np.ndarray]:
         if self.use_picam:
-            return True, cv2.cvtColor(self.picam.capture_array(), cv2.COLOR_RGB2BGR)
+            # return True, cv2.cvtColor(self.picam.capture_array(), cv2.COLOR_RGB2BGR)
+            return True, self.picam.capture_array()
         return self.cap.read()
 
     def release(self):
