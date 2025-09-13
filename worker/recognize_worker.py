@@ -2,7 +2,6 @@ from db.face_db import FaceDB
 from model.face_detector import HaarFaceDetector
 from model.face_recognizer import LBPFaceRecognizer
 from worker.detect_worker import DetectWorker
-import queue
 import numpy as np
 import cv2
 

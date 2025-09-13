@@ -60,12 +60,12 @@ if __name__ == "__main__":
             db = FaceDB()
             recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
                                thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
-            main(args, recog_worker)
+            main(args, recog_worker, cam)
 
     elif args.mode == 'detection':
         detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
                                 detect_every_n=args.den, quality=args.quality)
-        main(args, detect_worker)
+        main(args, detect_worker, cam)
 
     if args.use_picam:
         import RPi.GPIO as GPIO
