@@ -82,17 +82,17 @@ class DetectWorker(threading.Thread):
             faces = [(int(x*scale), int(y*scale), int(w*scale), int(h*scale)) for (x,y,w,h) in faces_small]
             faces = [(x, y, w, h) for (x, y, w, h) in faces if min(w, h) >= 48]
             static["boxes"] = faces
-
+        
         if self.use_picam and len(self.led_pins) > 0:
             import RPi.GPIO as GPIO
             # Sáng đèn nào đó nếu số người vượt mức
-            if len(static['boxes']):
+            if static['boxes']:
                 GPIO.output(self.led_pins[0], GPIO.HIGH)
             else:
                 GPIO.output(self.led_pins[0], GPIO.LOW)
 
         # vẽ khung + label
-        for (x,y,w,h) in zip(static["boxes"]):
+        for (x,y,w,h) in static['boxes']:
             color = (0, 255, 0)
             cv2.rectangle(frame_bgr, (x,y), (x+w, y+h), color, 2)
 

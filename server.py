@@ -20,14 +20,17 @@ def main(args, worker: DetectWorker, cam:VideoSource):
             
             jpg = worker.last_jpg
             if jpg is not None:
-                cv2.imshow(args.mode, jpg)
-            if cv2.waitKey(10) == 27:
+                frame_show = cv2.imdecode(jpg, cv2.IMREAD_COLOR)
+                if frame_show is not None:
+                    cv2.imshow(args.mode, frame_show)
+            if cv2.waitKey(1) & 0xFF == 27:
                 break
 
     except KeyboardInterrupt:
         pass
     finally:
         cam.release()
+        cv2.destroyAllWindows()
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Raspberry Client")
