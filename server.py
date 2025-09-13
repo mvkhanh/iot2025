@@ -62,11 +62,12 @@ if __name__ == "__main__":
             GPIO.output(led, GPIO.LOW)
             
     if args.mode == 'recognition':
+        recognizer = LBPFaceRecognizer()
+        db = FaceDB()
         if args.enroll_from_camera:
-            enroll_from_camera(args.enroll_from_camera, args.num, args.width, args.height, args.fps, args.use_picam)
+            enroll_from_camera(name=args.enroll_from_camera, cam=cam, detector=detector, recognizer=recognizer, 
+                               db=db, num=args.num)
         else:
-            recognizer = LBPFaceRecognizer()
-            db = FaceDB()
             recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
                                thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
             main(args, recog_worker, cam)

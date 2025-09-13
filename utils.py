@@ -59,13 +59,9 @@ class VideoSource:
             self.cap.release()
         
 # ---------- CLI enroll từ camera (không chạy server) ----------
-def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFaceDetector, recognizer: LBPFaceRecognizer, db: FaceDB, width=640, height=480, fps=15, use_picam=True):
+def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFaceDetector, recognizer: LBPFaceRecognizer, db: FaceDB):
     print(f"[Enroll] Thu {num} mẫu cho '{name}'. Nhấn Ctrl+C để hủy.")
     collected = 0
-    detector = HaarFaceDetector()
-    recognizer = LBPFaceRecognizer()
-    db = FaceDB()
-    cam = VideoSource(width, height, fps, use_picam=use_picam)
     time.sleep(1)
     try:
         while collected < num:
