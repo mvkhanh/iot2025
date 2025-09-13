@@ -1,10 +1,7 @@
-from multiprocessing import Process
 import numpy as np
 import cv2
 
 from db.face_db import FaceDB
-from model.face_detector import HaarFaceDetector
-from model.face_recognizer import LBPFaceRecognizer
 from worker.detect_worker import DetectWorker
 
 class RecogWorker(DetectWorker):
@@ -35,15 +32,6 @@ class RecogWorker(DetectWorker):
         need_detect = (frame_idx % self.detect_every_n == 0) or (not static["boxes"])
 
         if need_detect:
-            # target_w = 320
-            # if gray.shape[1] > target_w:
-            #     scale = gray.shape[1] / float(target_w)
-            #     small = cv2.resize(
-            #         gray,
-            #         (int(gray.shape[1] / scale), int(gray.shape[0] / scale)),
-            #         interpolation=cv2.INTER_AREA,
-            #     )
-            # else:
             scale = 1.0
             small = gray
 

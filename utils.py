@@ -76,10 +76,12 @@ def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFace
             mx = int(0.10*w); my = int(0.10*h)
             xs = max(0, x-mx); ys = max(0, y-my)
             xe = min(frame.shape[1]-1, x+w+mx); ye = min(frame.shape[0]-1, y+h+my)
-            aligned = detector.align_face_by_eyes(gray, xs, ys, xe - xs, ye - ys)
-            if aligned.size == 0:
+
+            face_crop_gray = gray[ys:ye, xs:xe]
+            if face_crop_gray.size == 0:
                 continue
-            proc = detector.preprocess_face_gray(aligned)
+
+            proc = detector.preprocess_face_gray(face_crop_gray)
             emb = recognizer.lbp_grid_hist(proc, grid=(6,6))
             db.add_embedding(name, emb, save_image=frame)
             collected += 1
