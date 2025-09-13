@@ -19,7 +19,7 @@ def main(args, worker: DetectWorker, cam:VideoSource):
             worker.submit(frame_bgr)
             
             jpg = worker.last_jpg
-            if jpg:
+            if jpg is not None:
                 cv2.imshow(args.mode, jpg)
             if cv2.waitKey(10) == 27:
                 break
