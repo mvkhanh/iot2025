@@ -55,7 +55,6 @@ if __name__ == "__main__":
     
     parser.add_argument("--width", type=int, default=320)
     parser.add_argument("--height", type=int, default=240)
-    parser.add_argument("--quality", type=int, default=80)
     parser.add_argument("--den", type=int, default=3, help="detect_every_n")
     parser.add_argument("--use-cam", dest='use_picam', action="store_false", help="Dùng cam laptop trong trường hợp không có pi", default=True)
     parser.add_argument("--fps", type=int, default=15, help="FPS khi dùng cam laptop")
@@ -91,12 +90,12 @@ if __name__ == "__main__":
             recog_worker = RecogWorker(detector_cls=HaarFaceDetector, recognizer_cls=LBPFaceRecognizer,
                                        use_picam=args.use_picam, led_pins=args.led_pins,
                                        thresh=args.thresh, margin=args.margin,
-                                       detect_every_n=args.den, quality=args.quality)
+                                       detect_every_n=args.den)
             capture_worker = CaptureWorker(cam, detect_worker=recog_worker)
             main(args, recog_worker, capture_worker)
 
     elif args.mode == 'detection':
         detect_worker = DetectWorker(detector_cls=HaarFaceDetector, use_picam=args.use_picam, led_pins=args.led_pins,
-                                     detect_every_n=args.den, quality=args.quality)
+                                     detect_every_n=args.den)
         capture_worker = CaptureWorker(cam, detect_worker=detect_worker)
         main(args, detect_worker, capture_worker)
