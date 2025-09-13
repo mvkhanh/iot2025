@@ -84,16 +84,18 @@ class DetectWorker(threading.Thread):
             faces = [(x, y, w, h) for (x, y, w, h) in faces if min(w, h) >= 48]
             static["boxes"] = faces
 
-        if self.use_picam:
+        if self.use_picam and len(self.led_pins) > 0:
             import RPi.GPIO as GPIO
             # Sáng đèn nào đó nếu số người vượt mức
+            if len(static['boxes']):
+                GPIO.output(self.led_pins[0], GPIO.HIGH)
+            else:
+                GPIO.output(self.led_pins[0], GPIO.LOW)
 
         # vẽ khung + label
-        for (x,y,w,h), (name, dist) in zip(static["boxes"], static["labels"]):
-            color = (0, 200, 0) if name != "unknown" else (0, 0, 255)
+        for (x,y,w,h) in zip(static["boxes"]):
+            color = (0, 255, 0)
             cv2.rectangle(frame_bgr, (x,y), (x+w, y+h), color, 2)
-            txt = f"{name} ({dist:.2f})" if name != "unknown" else "unknown"
-            cv2.putText(frame_bgr, txt, (x, max(0, y-8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
         ret, jpg = cv2.imencode(".jpg", frame_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), self.quality])
-        return jpg.tobytes() if ret else None
+        return jpg if ret else None

@@ -1,54 +1,22 @@
 from db.face_db import FaceDB
 from model.face_detector import HaarFaceDetector
 from model.face_recognizer import LBPFaceRecognizer
-import threading
+from worker.detect_worker import DetectWorker
 import queue
 import numpy as np
 import cv2
 
-class RecogWorker(threading.Thread):
+class RecogWorker(DetectWorker):
     """
     Single worker thread to run annotate_and_encode() asynchronously.
     Keeps only the most recent frame to avoid backlog.
     """
     def __init__(self, detector: HaarFaceDetector, recognizer: LBPFaceRecognizer, db: FaceDB, use_picam: bool, led_pins: list[int], thresh: float, margin: float, detect_every_n: int, quality: int=80):
-        super().__init__(daemon=True)
-        self.thresh = thresh
-        self.margin = margin
-        self.detect_every_n = detect_every_n
-        self.use_picam = use_picam
-        self.led_pins = led_pins
-        self.quality = quality
-        self.detector = detector
+        super().__init__(detector=detector, use_picam=use_picam, led_pins=led_pins, thresh=thresh, margin=margin, detect_every_n=detect_every_n
+                         , quality=quality)
         self.recognizer = recognizer
         self.db = db
-        self.q = queue.Queue(maxsize=2)
-        self.last_jpg = None
-        self.frame_idx = 0
-        self._stop = False
 
-    def submit(self, frame_bgr: np.ndarray):
-        try:
-            if self.q.full():
-                # drop older frame
-                self.q.get_nowait()
-            self.q.put_nowait(frame_bgr)
-        except Exception:
-            pass
-
-    def run(self):
-        while not self._stop:
-            try:
-                frame = self.q.get(timeout=0.5)
-            except Exception:
-                continue
-            jpg = self.annotate_and_encode(frame, frame_idx=self.frame_idx)
-            self.frame_idx += 1
-            self.last_jpg = jpg
-
-    def stop(self):
-        self._stop = True
-        
     def annotate_and_encode(self, frame_bgr: np.ndarray, frame_idx=0):
         static = getattr(self.__class__.annotate_and_encode, "_static",  None)
         if static is None:

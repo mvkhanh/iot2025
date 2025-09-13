@@ -1,106 +1,75 @@
 #!/usr/bin/env python3
 import argparse
-import threading, queue
-import numpy as np
+import time
 import cv2
-import imagezmq
+from db.face_db import FaceDB
+from model.face_detector import HaarFaceDetector
+from model.face_recognizer import LBPFaceRecognizer
+from utils import enroll_from_camera, VideoSource
+from worker.detect_worker import DetectWorker
+from worker.recognize_worker import RecogWorker
 
-def receiver_thread(q: queue.Queue, bind: str, port: int, stop_event: threading.Event):
-    """
-    Luồng phụ (daemon): nhận JPEG qua ImageZMQ và đưa vào queue.
-    Dùng poll(1000 ms) để có thể kiểm tra stop_event định kỳ (không bị block vô hạn).
-    """
-    hub = imagezmq.ImageHub(open_port=f"tcp://{bind}:{port}", REQ_REP=True)
-    print(f"[SERVER] Listening on tcp://{bind}:{port}")
+def main(args, worker: DetectWorker, cam:VideoSource):
+    worker.start()
     try:
-        while not stop_event.is_set():
-            # chờ tối đa 1000ms để kiểm tra stop_event
-            try:
-                if hasattr(hub, "zmq_socket") and hub.zmq_socket.poll(1000):  # 1s
-                    name, jpg_buffer = hub.recv_jpg()
-                    hub.send_reply(b"OK")
-                    # giữ frame mới nhất
-                    if q.full():
-                        try:
-                            q.get_nowait()
-                        except Exception:
-                            pass
-                    try:
-                        q.put_nowait(jpg_buffer)
-                    except Exception:
-                        pass
-                else:
-                    # không có dữ liệu trong 1s, quay lại check stop_event
-                    continue
-            except Exception as e:
-                continue
-    finally:
-        # dọn dẹp socket/context của ZMQ
-        try:
-            if hasattr(hub, "zmq_socket"):
-                hub.zmq_socket.close(0)
-        except Exception:
-            pass
-        try:
-            if hasattr(hub, "zmq_context"):
-                hub.zmq_context.term()
-        except Exception:
-            pass
-        print("[SERVER] Receiver thread cleaned up.")
-
-def main(args):
-    q = queue.Queue(maxsize=2)
-    stop_event = threading.Event()
-
-    # start receiver as daemon
-    t_recv = threading.Thread(
-        target=receiver_thread,
-        args=(q, args.bind, args.port, stop_event),
-        daemon=True
-    )
-    t_recv.start()
-
-    # main thread runs display (blocking)
-    win = args.window
-    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
-    print("[SERVER] Display running. Press 'q' to quit.")
-    try:
-        while not stop_event.is_set():
-            try:
-                jpg_buffer = q.get(timeout=1.0)
-            except queue.Empty:
-                # vẫn cần quét phím thoát
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                continue
-
-            arr = np.frombuffer(jpg_buffer, dtype=np.uint8)
-            frame_bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-            if frame_bgr is None:
-                continue
-
-            cv2.imshow(win, frame_bgr)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+        while True:
+            ok, frame_bgr = cam.read()
+            if not ok:
+                time.sleep(0.02); continue
+            worker.submit(frame_bgr)
+            
+            jpg = worker.last_jpg
+            if jpg:
+                cv2.imshow(args.mode, jpg)
+            if cv2.waitKey(10) == 27:
                 break
-    except KeyboardInterrupt:
-        print("\n[SERVER] KeyboardInterrupt.")
-    finally:
-        # yêu cầu receiver dừng & dọn dẹp UI
-        stop_event.set()
-        try:
-            cv2.destroyAllWindows()
-        except Exception:
-            pass
-        try:
-            t_recv.join(timeout=1.0)
-        except Exception:
-            pass
-        print("[SERVER] Clean exit.")
 
+    except KeyboardInterrupt:
+        pass
+    finally:
+        cam.release()
+        
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Server: 1 main (display) + 1 daemon (receiver)")
-    parser.add_argument("--bind", default="*", help='Địa chỉ bind (thường "*" hoặc "0.0.0.0")')
-    parser.add_argument("--port", type=int, default=9009)
-    parser.add_argument("--window", default="Face Stream")
+    parser = argparse.ArgumentParser(prog="Raspberry Client")
+    
+    parser.add_argument("--width", type=int, default=640)
+    parser.add_argument("--height", type=int, default=480)
+    parser.add_argument("--quality", type=int, default=80)
+    parser.add_argument("--den", type=int, default=3, help="detect_every_n")
+    parser.add_argument("--use-cam", dest='use_picam', action="store_false", help="Dùng cam laptop trong trường hợp không có pi", default=True)
+    parser.add_argument("--fps", type=int, default=15, help="FPS khi dùng cam laptop")
+    parser.add_argument('--led-pins', type=lambda s: list(map(lambda x: int(x.strip()), s.split(','))), help='Ví dụ: 1,2,3')
+    
+    sub = parser.add_subparsers(dest="mode", required=True)
+    
+    pc = sub.add_parser("recognition", help="Chạy recognition")
+    pc.add_argument("--thresh", type=float, default=0.6, help="Chi-square threshold for LBP (try 0.55..0.70)")
+    pc.add_argument("--margin", type=float, default=0.02)
+    pc.add_argument("--enroll-from-camera", type=str, default=None, help="Tên người để enroll từ camera.")
+    pc.add_argument("--num", type=int, default=15, help="Số mẫu khi enroll từ camera")
+    
+    pd = sub.add_parser("detection", help="Chạy detection")
     args = parser.parse_args()
-    main(args)
+    detector = HaarFaceDetector()
+    cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
+    if args.mode == 'recognition':
+        if args.enroll_from_camera:
+            enroll_from_camera(args.enroll_from_camera, args.num, args.width, args.height, args.fps, args.use_picam)
+        else:
+            recognizer = LBPFaceRecognizer()
+            db = FaceDB()
+            recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
+                               thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
+            main(args, recog_worker)
+
+    elif args.mode == 'detection':
+        detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
+                               thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
+        main(args, detect_worker)
+
+    if args.use_picam:
+        import RPi.GPIO as GPIO
+        GPIO.setmode(GPIO.BCM)
+        for led in args.led_pins:
+            GPIO.setup(led, GPIO.OUT) #led
+            GPIO.output(led, GPIO.LOW)
