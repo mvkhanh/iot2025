@@ -46,16 +46,3 @@ class FaceDB:
             os.makedirs(person_dir, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             cv2.imwrite(os.path.join(person_dir, f"{ts}.jpg"), save_image)
-
-    def centroids(self) -> Dict[str, np.ndarray]:
-        # trả về tâm mỗi người (trung bình L2-normalized)
-        out = {}
-        for k, vlist in self.emb.items():
-            if not vlist:
-                continue
-            arr = np.array(vlist, dtype=np.float32)
-            # L2 norm từng vector (phòng dữ liệu cũ)
-            arr = arr / (np.linalg.norm(arr, axis=1, keepdims=True)+1e-9)
-            out[k] = np.mean(arr, axis=0)
-            out[k] = out[k] / (np.linalg.norm(out[k])+1e-9)
-        return out
