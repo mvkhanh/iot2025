@@ -52,6 +52,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     detector = HaarFaceDetector()
     cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
+    if args.use_picam:
+        import RPi.GPIO as GPIO
+        GPIO.setmode(GPIO.BCM)
+        for led in args.led_pins:
+            GPIO.setup(led, GPIO.OUT) #led
+            GPIO.output(led, GPIO.LOW)
+            
     if args.mode == 'recognition':
         if args.enroll_from_camera:
             enroll_from_camera(args.enroll_from_camera, args.num, args.width, args.height, args.fps, args.use_picam)
@@ -66,10 +73,3 @@ if __name__ == "__main__":
         detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
                                 detect_every_n=args.den, quality=args.quality)
         main(args, detect_worker, cam)
-
-    if args.use_picam:
-        import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BCM)
-        for led in args.led_pins:
-            GPIO.setup(led, GPIO.OUT) #led
-            GPIO.output(led, GPIO.LOW)
