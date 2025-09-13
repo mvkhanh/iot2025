@@ -90,17 +90,17 @@ class DetectWorker(Process):
 
         if need_detect:
             # Downscale for faster Haar (target width ~240)
-            target_w = 240
-            if gray.shape[1] > target_w:
-                scale = gray.shape[1] / float(target_w)
-                small = cv2.resize(
-                    gray,
-                    (int(gray.shape[1] / scale), int(gray.shape[0] / scale)),
-                    interpolation=cv2.INTER_AREA,
-                )
-            else:
-                scale = 1.0
-                small = gray
+            # target_w = 240
+            # if gray.shape[1] > target_w:
+            #     scale = gray.shape[1] / float(target_w)
+            #     small = cv2.resize(
+            #         gray,
+            #         (int(gray.shape[1] / scale), int(gray.shape[0] / scale)),
+            #         interpolation=cv2.INTER_AREA,
+            #     )
+            # else:
+            scale = 1.0
+            small = gray
 
             faces_small = self.detector.detect(small)
             faces = [(int(x * scale), int(y * scale), int(w * scale), int(h * scale))

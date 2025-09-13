@@ -30,10 +30,10 @@ class HaarFaceDetector:
             return gray_crop
         # resize ổn định để CLAHE ổn định (dù lbp_grid_hist cũng sẽ resize)
         g = cv2.resize(gray_crop, (96, 96), interpolation=cv2.INTER_LINEAR)
-        g = self.clache.apply(g)
-        g = cv2.LUT(g, self.gamma_lut)
-        # blur nhẹ để giảm nhiễu muối tiêu
-        g = cv2.GaussianBlur(g, (3, 3), 0)
+        # g = self.clache.apply(g)
+        # g = cv2.LUT(g, self.gamma_lut)
+        # # blur nhẹ để giảm nhiễu muối tiêu
+        # g = cv2.GaussianBlur(g, (3, 3), 0)
         return g
     
     def align_face_by_eyes(self, gray_full: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray:
