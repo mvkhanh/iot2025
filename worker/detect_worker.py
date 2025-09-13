@@ -96,5 +96,4 @@ class DetectWorker(threading.Thread):
             color = (0, 255, 0)
             cv2.rectangle(frame_bgr, (x,y), (x+w, y+h), color, 2)
 
-        ret, jpg = cv2.imencode(".jpg", frame_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), self.quality])
-        return jpg if ret else None
+        return frame_bgr

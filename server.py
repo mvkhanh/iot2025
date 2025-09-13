@@ -20,10 +20,8 @@ def main(args, worker: DetectWorker, cam:VideoSource):
             
             jpg = worker.last_jpg
             if jpg is not None:
-                # frame_show = cv2.imdecode(jpg, cv2.IMREAD_COLOR)
-                # if frame_show is not None:
-                #     cv2.imshow(args.mode, frame_show)
                 cv2.imshow(args.mode, jpg)
+
             if cv2.waitKey(1) & 0xFF == 27:
                 break
 
