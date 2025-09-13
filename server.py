@@ -91,10 +91,10 @@ if __name__ == "__main__":
             recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
                                thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
             capture_worker.detect_worker = recog_worker
-            main(args, recog_worker, cam)
+            main(args, recog_worker, capture_worker)
 
     elif args.mode == 'detection':
         detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
                                 detect_every_n=args.den, quality=args.quality)
         capture_worker.detect_worker = detect_worker
-        main(args, detect_worker, cam)
+        main(args, detect_worker, capture_worker)
