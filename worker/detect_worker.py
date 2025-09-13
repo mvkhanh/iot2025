@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue, Event
 import queue as pyqueue
 import numpy as np
 import cv2
+from typing import Optional
 
 # NOTE: detector must be constructed inside the child process to avoid pickling issues.
 class DetectWorker(Process):
@@ -11,7 +12,7 @@ class DetectWorker(Process):
     """
     def __init__(self, detector_cls, use_picam: bool, led_pins: list[int],
                  detect_every_n: int, quality: int = 80,
-                 in_q: Queue | None = None, out_q: Queue | None = None):
+                 in_q: Optional[Queue] = None, out_q: Optional[Queue] = None):
         super().__init__(daemon=True)
         self.detector_cls = detector_cls
         self.use_picam = use_picam
