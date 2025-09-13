@@ -20,12 +20,12 @@ class CaptureWorker(threading.Thread):
     def run(self):
         try:
             while not self._stop:
-                ok, frame_bgr = cam.read()
+                ok, frame_bgr = self.cam.read()
                 if not ok:
                     time.sleep(0.02); continue
                 self.detect_worker.submit(frame_bgr)
         finally:
-            cam.release()
+            self.cam.release()
             
     def stop(self):
         self._stop = True
@@ -38,9 +38,9 @@ def main(args, detect_worker: DetectWorker, capture_worker: CaptureWorker):
     cv2.resizeWindow(args.mode, width=640, height=480)
     try:
         while True:
-            jpg = detect_worker.last_jpg
-            if jpg is not None:
-                cv2.imshow(args.mode, jpg)
+            frame = detect_worker.poll()
+            if frame is not None:
+                cv2.imshow(args.mode, frame)
 
             if cv2.waitKey(1) & 0xFF == 27:
                 break
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     detector = HaarFaceDetector()
     cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
-    capture_worker = CaptureWorker(cam)
+    
     if args.use_picam:
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)
@@ -82,19 +82,21 @@ if __name__ == "__main__":
             GPIO.output(led, GPIO.LOW)
             
     if args.mode == 'recognition':
-        recognizer = LBPFaceRecognizer()
-        db = FaceDB()
+        recognizer = LBPFaceRecognizer()  # kept for enroll flow
+        db = FaceDB()                     # kept for enroll flow
         if args.enroll_from_camera:
-            enroll_from_camera(name=args.enroll_from_camera, cam=cam, detector=detector, recognizer=recognizer, 
-                               db=db, num=args.num)
+            enroll_from_camera(name=args.enroll_from_camera, cam=cam, detector=HaarFaceDetector(),
+                               recognizer=recognizer, db=db, num=args.num)
         else:
-            recog_worker = RecogWorker(detector=detector, recognizer=recognizer, db=db, use_picam=args.use_picam, led_pins=args.led_pins,
-                               thresh=args.thresh, margin=args.margin, detect_every_n=args.den, quality=args.quality)
-            capture_worker.detect_worker = recog_worker
+            recog_worker = RecogWorker(detector_cls=HaarFaceDetector, recognizer_cls=LBPFaceRecognizer,
+                                       use_picam=args.use_picam, led_pins=args.led_pins,
+                                       thresh=args.thresh, margin=args.margin,
+                                       detect_every_n=args.den, quality=args.quality)
+            capture_worker = CaptureWorker(cam, detect_worker=recog_worker)
             main(args, recog_worker, capture_worker)
 
     elif args.mode == 'detection':
-        detect_worker = DetectWorker(detector=detector, use_picam=args.use_picam, led_pins=args.led_pins,
-                                detect_every_n=args.den, quality=args.quality)
-        capture_worker.detect_worker = detect_worker
+        detect_worker = DetectWorker(detector_cls=HaarFaceDetector, use_picam=args.use_picam, led_pins=args.led_pins,
+                                     detect_every_n=args.den, quality=args.quality)
+        capture_worker = CaptureWorker(cam, detect_worker=detect_worker)
         main(args, detect_worker, capture_worker)
