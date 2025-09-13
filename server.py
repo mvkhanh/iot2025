@@ -35,8 +35,8 @@ def main(args, worker: DetectWorker, cam:VideoSource):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Raspberry Client")
     
-    parser.add_argument("--width", type=int, default=640)
-    parser.add_argument("--height", type=int, default=480)
+    parser.add_argument("--width", type=int, default=320)
+    parser.add_argument("--height", type=int, default=240)
     parser.add_argument("--quality", type=int, default=80)
     parser.add_argument("--den", type=int, default=3, help="detect_every_n")
     parser.add_argument("--use-cam", dest='use_picam', action="store_false", help="Dùng cam laptop trong trường hợp không có pi", default=True)
