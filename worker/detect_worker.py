@@ -58,7 +58,7 @@ class DetectWorker(threading.Thread):
 
         if need_detect:
             # --- Downscale for faster Haar (target width ~320) ---
-            target_w = 320
+            target_w = 240
             if gray.shape[1] > target_w:
                 scale = gray.shape[1] / float(target_w)
                 small = cv2.resize(gray, (int(gray.shape[1]/scale), int(gray.shape[0]/scale)), interpolation=cv2.INTER_AREA)
