@@ -64,7 +64,7 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="mode", required=True)
     
     pc = sub.add_parser("recognition", help="Chạy recognition")
-    pc.add_argument("--thresh", type=float, default=0.6, help="Chi-square threshold for LBP (try 0.55..0.70)")
+    pc.add_argument("--thresh", type=float, default=0.7, help="Chi-square threshold for LBP (try 0.55..0.70)")
     pc.add_argument("--margin", type=float, default=0.02)
     pc.add_argument("--enroll-from-camera", type=str, default=None, help="Tên người để enroll từ camera.")
     pc.add_argument("--num", type=int, default=15, help="Số mẫu khi enroll từ camera")
