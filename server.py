@@ -11,13 +11,14 @@ from worker.recognize_worker import RecogWorker
 
 def main(args, worker: DetectWorker, cam:VideoSource):
     worker.start()
+    cv2.resizeWindow(args.mode, width=640, height=480)
     try:
         while True:
             ok, frame_bgr = cam.read()
             if not ok:
                 time.sleep(0.02); continue
             worker.submit(frame_bgr)
-            
+
             jpg = worker.last_jpg
             if jpg is not None:
                 cv2.imshow(args.mode, jpg)
