@@ -6,7 +6,7 @@
 
 ### Trên Raspberry Pi
 ```
-sudo apt-get install python3-opencv python3-picamera2
+sudo apt-get install python3-picamera2
 pip install numpy opencv-contrib-python
 ```
 
