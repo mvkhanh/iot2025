@@ -7,27 +7,27 @@
 ### Trên Raspberry Pi
 ```
 sudo apt-get install python3-opencv python3-picamera2
-pip install numpy
+pip install numpy opencv-contrib-python
 ```
 
 ## 2. Chạy chương trình
 
 #### Enroll người mới từ camera:
 ```
-python client.py recognition --enroll-from-camera <new_person_name>
+python server.py recognition --enroll-from-camera <new_person_name>
 ```
 
 #### Chạy chế độ nhận diện
 ```
-python client.py recognition
+python server.py recognition
 ```
 
 
 #### Hoặc chế độ detection đơn giản
 ```
-python client.py detection
+python server.py detection
 ```
 
 🗂 Cấu trúc DB
 
-Thư mục faces_db/ chứa embeddings JSON và ảnh gốc của từng người đã enroll.
+Thư mục faces_db/ chứa mô hình, ảnh xám đã crop và ảnh gốc của từng người đã enroll.
