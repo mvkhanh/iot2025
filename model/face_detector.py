@@ -9,15 +9,6 @@ class HaarFaceDetector:
         if not os.path.exists(haar_path):
             raise RuntimeError("Không tìm thấy haarcascade_frontalface_default.xml")
         self.det = cv2.CascadeClassifier(haar_path)
-
-    def preprocess_face_gray(self, gray_crop: np.ndarray) -> np.ndarray:
-        """
-        Đầu vào/ra: ảnh GRAY.
-        """
-        if gray_crop.size == 0:
-            return gray_crop
-        g = cv2.resize(gray_crop, (96, 96), interpolation=cv2.INTER_LINEAR)
-        return g
     
     def detect(self, gray: np.ndarray) -> List[Tuple[int,int,int,int]]:
         faces = self.det.detectMultiScale(

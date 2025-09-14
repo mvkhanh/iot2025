@@ -3,6 +3,7 @@ import cv2
 
 from db.face_db import FaceDB
 from worker.detect_worker import DetectWorker
+from utils import preprocess_face_gray
 
 class RecogWorker(DetectWorker):
     """
@@ -28,33 +29,29 @@ class RecogWorker(DetectWorker):
         if static is None:
             static = {"boxes": [], "labels": []}
 
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+        if self.use_picam:
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+            
         need_detect = (frame_idx % self.detect_every_n == 0) or (not static["boxes"])
 
         if need_detect:
-            scale = 1.0
-            small = gray
-
-            faces_small = self.detector.detect(small)
-            faces = [(int(x * scale), int(y * scale), int(w * scale), int(h * scale))
-                     for (x, y, w, h) in faces_small]
+            faces = self.detector.detect(gray)
             labels = []
             for (x, y, w, h) in faces:
                 if min(w, h) < 48:
-                    labels.append(("unknown", 1.0))
+                    labels.append(("unknown", 0.0))
                     continue
                 mx = int(0.10 * w); my = int(0.10 * h)
                 xs = max(0, x - mx); ys = max(0, y - my)
                 xe = min(frame_bgr.shape[1] - 1, x + w + mx); ye = min(frame_bgr.shape[0] - 1, y + h + my)
-                aligned = self.detector.align_face_by_eyes(gray, xs, ys, xe - xs, ye - ys)
-                if aligned.size == 0:
-                    labels.append(("unknown", 1.0)); continue
-                proc = self.detector.preprocess_face_gray(aligned)
-                emb = self.recognizer.lbp_grid_hist(proc, grid=(6, 6))
-                name, dist, dist2 = self.recognizer.recognize_hist(
-                    emb, self.db.emb, thresh=float(self.thresh), margin=self.margin
-                )
-                labels.append((name, dist))
+                face_crop_gray = gray[ys:ye, xs:xe]
+                if face_crop_gray.size == 0:
+                    continue
+                proc = preprocess_face_gray(face_crop_gray)
+                name, conf = self.recognizer.predict(proc, thresh=float(self.thresh))
+                labels.append((name, conf))
             static["boxes"] = faces
             static["labels"] = labels
 
@@ -64,7 +61,7 @@ class RecogWorker(DetectWorker):
                 import RPi.GPIO as GPIO
                 identities = self.db.list_identities()
                 active = set()
-                for (lb, dist) in static['labels']:
+                for (lb, conf) in static['labels']:
                     if lb != "unknown" and lb in identities:
                         idx = identities.index(lb)
                         if idx < len(self.led_pins):
@@ -76,10 +73,10 @@ class RecogWorker(DetectWorker):
             except Exception:
                 pass
 
-        for (x, y, w, h), (name, dist) in zip(static["boxes"], static["labels"]):
+        for (x, y, w, h), (name, conf) in zip(static["boxes"], static["labels"]):
             color = (0, 200, 0) if name != "unknown" else (0, 0, 255)
             cv2.rectangle(frame_bgr, (x, y), (x + w, y + h), color, 2)
-            txt = f"{name} ({dist:.2f})" if name != "unknown" else "unknown"
+            txt = f"{name} ({conf:.1f})" if name != "unknown" else "unknown"
             cv2.putText(frame_bgr, txt, (x, max(0, y - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
         return frame_bgr

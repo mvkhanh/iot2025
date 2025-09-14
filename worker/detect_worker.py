@@ -84,17 +84,15 @@ class DetectWorker(Process):
     def annotate_and_encode(self, frame_bgr: np.ndarray, frame_idx = 0, static=None):
         if static is None:
             static = {"boxes": []}
-
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+        if self.use_picam:
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_RGB2GRAY)
+        else:
+            
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         need_detect = (frame_idx % self.detect_every_n == 0) or (not static["boxes"])
 
         if need_detect:
-            scale = 1.0
-            small = gray
-
-            faces_small = self.detector.detect(small)
-            faces = [(int(x * scale), int(y * scale), int(w * scale), int(h * scale))
-                     for (x, y, w, h) in faces_small]
+            faces = self.detector.detect(gray)
             faces = [(x, y, w, h) for (x, y, w, h) in faces if min(w, h) >= 48]
             static["boxes"] = faces
 

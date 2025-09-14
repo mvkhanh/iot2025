@@ -5,7 +5,7 @@ import cv2
 import threading
 from db.face_db import FaceDB
 from model.face_detector import HaarFaceDetector
-from model.face_recognizer import LBPFaceRecognizer
+from model.face_recognizer import LBPHRecognizer
 from utils import enroll_from_camera, VideoSource
 from worker.detect_worker import DetectWorker
 from worker.recognize_worker import RecogWorker
@@ -63,14 +63,14 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="mode", required=True)
     
     pc = sub.add_parser("recognition", help="Chạy recognition")
-    pc.add_argument("--thresh", type=float, default=0.7, help="Chi-square threshold for LBP (try 0.55..0.70)")
+    pc.add_argument("--thresh", type=float, default=60, help="Threshold for OpenCV's LBPH")
     pc.add_argument("--margin", type=float, default=0.02)
     pc.add_argument("--enroll-from-camera", type=str, default=None, help="Tên người để enroll từ camera.")
     pc.add_argument("--num", type=int, default=15, help="Số mẫu khi enroll từ camera")
     
     pd = sub.add_parser("detection", help="Chạy detection")
     args = parser.parse_args()
-    detector = HaarFaceDetector()
+
     cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
     
     if args.use_picam:
@@ -81,13 +81,12 @@ if __name__ == "__main__":
             GPIO.output(led, GPIO.LOW)
             
     if args.mode == 'recognition':
-        recognizer = LBPFaceRecognizer()  # kept for enroll flow
         db = FaceDB()                     # kept for enroll flow
         if args.enroll_from_camera:
             enroll_from_camera(name=args.enroll_from_camera, cam=cam, detector=HaarFaceDetector(),
-                               recognizer=recognizer, db=db, num=args.num)
+                               recognizer=LBPHRecognizer(), db=db, num=args.num)
         else:
-            recog_worker = RecogWorker(detector_cls=HaarFaceDetector, recognizer_cls=LBPFaceRecognizer,
+            recog_worker = RecogWorker(detector_cls=HaarFaceDetector, recognizer_cls=LBPHRecognizer,
                                        use_picam=args.use_picam, led_pins=args.led_pins,
                                        thresh=args.thresh, margin=args.margin,
                                        detect_every_n=args.den)

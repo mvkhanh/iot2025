@@ -3,7 +3,7 @@ import time
 import numpy as np
 import cv2
 from model.face_detector import HaarFaceDetector
-from model.face_recognizer import LBPFaceRecognizer
+from model.face_recognizer import LBPHRecognizer
 from db.face_db import FaceDB
 
 # ---------- Video source: Picamera2 (ưu tiên), fallback OpenCV ----------
@@ -44,8 +44,7 @@ class VideoSource:
 
     def read(self) -> Optional[np.ndarray]:
         if self.use_picam:
-            # return True, cv2.cvtColor(self.picam.capture_array(), cv2.COLOR_RGB2BGR)
-            return True, self.picam.capture_array()
+            return self.picam.capture_array()
         return self.cap.read()
 
     def release(self):
@@ -58,9 +57,18 @@ class VideoSource:
         else:
             self.cap.release()
         
+def preprocess_face_gray(gray_crop: np.ndarray) -> np.ndarray:
+    """
+    Đầu vào/ra: ảnh GRAY.
+    """
+    if gray_crop.size == 0:
+        return gray_crop
+    g = cv2.resize(gray_crop, (96, 96), interpolation=cv2.INTER_LINEAR)
+    return g        
+
 # ---------- CLI enroll từ camera ----------
 def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFaceDetector, 
-                       recognizer: LBPFaceRecognizer, db: FaceDB):
+                       recognizer: LBPHRecognizer, db: FaceDB):
     print(f"[Enroll] Thu {num} mẫu cho '{name}'. Nhấn Ctrl+C để hủy.")
     collected = 0
     time.sleep(1)
@@ -69,7 +77,10 @@ def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFace
             _, frame = cam.read()
             if frame is None:
                 time.sleep(0.05); continue
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if cam.use_picam:
+                gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector.detect(gray)
             if len(faces) == 0:
                 continue
@@ -82,9 +93,8 @@ def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFace
             if face_crop_gray.size == 0:
                 continue
 
-            proc = detector.preprocess_face_gray(face_crop_gray)
-            emb = recognizer.lbp_grid_hist(proc, grid=(6,6))
-            db.add_embedding(name, emb, save_image=frame)
+            proc = preprocess_face_gray(face_crop_gray)
+            db.add_sample(name, proc, save_full_bgr=frame)
             collected += 1
             print(f"[Enroll] Collected {collected}/{num}")
             time.sleep(1)
@@ -93,3 +103,13 @@ def enroll_from_camera(name: str, num: int, cam: VideoSource, detector: HaarFace
     finally:
         cam.release()
     print(f"[Enroll] Hoàn tất. Tổng mẫu: {collected}")
+
+    # Train/Update LBPH model
+    try:
+        if getattr(recognizer, "_trained", False):
+            recognizer.update_from_facedb(db)
+        else:
+            recognizer.train_from_facedb(db)
+        print("[Enroll] Model LBPH đã được lưu/cập nhật.")
+    except Exception as e:
+        print(f"[Enroll][WARN] Không thể train/update LBPH: {e}")
