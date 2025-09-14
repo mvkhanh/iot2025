@@ -44,7 +44,7 @@ class VideoSource:
 
     def read(self) -> Optional[np.ndarray]:
         if self.use_picam:
-            return self.picam.capture_array()
+            return True, self.picam.capture_array()
         return self.cap.read()
 
     def release(self):

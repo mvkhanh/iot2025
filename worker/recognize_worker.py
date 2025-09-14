@@ -11,13 +11,12 @@ class RecogWorker(DetectWorker):
     Heavy objects (detector, recognizer, DB) are constructed inside the child process.
     """
     def __init__(self, detector_cls, recognizer_cls, use_picam: bool, led_pins: list[int],
-                 thresh: float, margin: float, detect_every_n: int, quality: int = 80,
+                 thresh: float, detect_every_n: int, quality: int = 80,
                  in_q=None, out_q=None):
         super().__init__(detector_cls=detector_cls, use_picam=use_picam, led_pins=led_pins,
                          detect_every_n=detect_every_n, quality=quality, in_q=in_q, out_q=out_q)
         self.recognizer_cls = recognizer_cls
         self.thresh = thresh
-        self.margin = margin
 
     def _init_in_child(self):
         # Build detector, recognizer, and DB in child process

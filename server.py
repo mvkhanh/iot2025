@@ -64,7 +64,6 @@ if __name__ == "__main__":
     
     pc = sub.add_parser("recognition", help="Chạy recognition")
     pc.add_argument("--thresh", type=float, default=60, help="Threshold for OpenCV's LBPH")
-    pc.add_argument("--margin", type=float, default=0.02)
     pc.add_argument("--enroll-from-camera", type=str, default=None, help="Tên người để enroll từ camera.")
     pc.add_argument("--num", type=int, default=15, help="Số mẫu khi enroll từ camera")
     
@@ -88,7 +87,7 @@ if __name__ == "__main__":
         else:
             recog_worker = RecogWorker(detector_cls=HaarFaceDetector, recognizer_cls=LBPHRecognizer,
                                        use_picam=args.use_picam, led_pins=args.led_pins,
-                                       thresh=args.thresh, margin=args.margin,
+                                       thresh=args.thresh,
                                        detect_every_n=args.den)
             capture_worker = CaptureWorker(cam, detect_worker=recog_worker)
             main(args, recog_worker, capture_worker)
