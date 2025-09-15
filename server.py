@@ -71,7 +71,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cam = VideoSource(args.width, args.height, args.fps, use_picam=args.use_picam)
-    
+
     if args.use_picam:
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)

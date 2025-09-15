@@ -100,9 +100,9 @@ class DetectWorker(Process):
         if self.use_picam and len(self.led_pins) > 0:
             try:
                 import RPi.GPIO as GPIO
-                for i in len(static['boxes']):
+                for i in range(min(len(static['boxes']), len(self.led_pins))):
                     GPIO.output(self.led_pins[i], GPIO.HIGH)
-                for i in range(len(static['boxes']), len(self.led_pins) + 1):
+                for i in range(len(static['boxes']), len(self.led_pins)):
                     GPIO.output(self.led_pins[i], GPIO.LOW)
             except Exception:
                 pass
