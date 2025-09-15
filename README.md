@@ -25,7 +25,7 @@ python server.py recognition
 
 #### Hoặc chế độ detection đơn giản
 ```
-python server.py detection
+python server.py --led-pins <led pins: 21,16,19,...> detection
 ```
 
 🗂 Cấu trúc DB
